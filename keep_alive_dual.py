@@ -134,14 +134,55 @@ def interact_with_tennis_app(driver):
         # Wait for page to load
         logger.info("Waiting for page to load...")
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        time.sleep(8)
+        
+        # Wait for Streamlit to fully render - look for the main container
+        logger.info("Waiting for Streamlit to render content...")
+        try:
+            # Wait for Streamlit's main content div
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
+            logger.info("Streamlit app container found")
+        except:
+            logger.warning("Could not find Streamlit app container, continuing...")
+        
+        time.sleep(15)  # Give extra time for React components to render
         
         logger.info("Page loaded, looking for interactive elements...")
         
+        # Debug: Save page source to see what's actually there
+        try:
+            page_source = driver.page_source
+            logger.info(f"Page source length: {len(page_source)} characters")
+            # Check if it looks like a Streamlit app
+            if "streamlit" in page_source.lower():
+                logger.info("✅ Page contains Streamlit content")
+            else:
+                logger.warning("⚠️  Page doesn't appear to contain Streamlit content")
+            
+            # Save full page source for debugging
+            with open("tennis_page_source.html", "w", encoding="utf-8") as f:
+                f.write(page_source)
+            logger.info("Page source saved to tennis_page_source.html")
+        except Exception as e:
+            logger.warning(f"Could not analyze page source: {e}")
+        
         # Click the correct radio buttons for demo video and Djokovic
         try:
+            # Wait specifically for radio buttons to appear
+            logger.info("Waiting for radio buttons to appear...")
             radios = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "input[type='radio']")))
             logger.info(f"Found {len(radios)} radio buttons")
+            
+            # Log details about each radio for debugging
+            for i, radio in enumerate(radios):
+                try:
+                    label_text = "unknown"
+                    # Try to find associated label
+                    parent = radio.find_element(By.XPATH, "..")
+                    if parent:
+                        label_text = parent.text[:50] if parent.text else "no text"
+                    logger.info(f"  Radio {i}: {label_text}")
+                except:
+                    pass
             
             # Radio button order in tennis app:
             # radios[0] = "Use demo video"
@@ -151,13 +192,15 @@ def interact_with_tennis_app(driver):
             
             if len(radios) >= 4:
                 # Click "Use demo video" first (should be default but ensure it)
+                logger.info("Clicking radio button 0 (Use demo video)...")
                 driver.execute_script("arguments[0].scrollIntoView(true);", radios[0])
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", radios[0])
                 logger.info("✅ Selected 'Use demo video'")
-                time.sleep(2)
+                time.sleep(3)
                 
                 # Click "Novak Djokovic" (4th radio button)
+                logger.info("Clicking radio button 3 (Novak Djokovic)...")
                 driver.execute_script("arguments[0].scrollIntoView(true);", radios[3])
                 time.sleep(1)
                 driver.execute_script("arguments[0].click();", radios[3])
@@ -165,8 +208,16 @@ def interact_with_tennis_app(driver):
                 time.sleep(4)
             else:
                 logger.warning(f"Expected 4 radio buttons, found {len(radios)}")
+                # Still try to click something
+                if len(radios) > 0:
+                    driver.execute_script("arguments[0].click();", radios[-1])
+                    logger.info(f"Clicked last radio button (index {len(radios)-1})")
+        except TimeoutException:
+            logger.error("❌ Timeout waiting for radio buttons - they never appeared!")
+            driver.save_screenshot("tennis_no_radios.png")
         except Exception as e:
-            logger.warning(f"Could not select radios: {e}")
+            logger.error(f"❌ Error selecting radios: {e}")
+            driver.save_screenshot("tennis_radio_error.png")
         
         # Find and click Run button - try multiple strategies
         logger.info("Looking for Run Backhand Detection button...")
@@ -251,7 +302,16 @@ def interact_with_qa_app(driver):
         # Wait for page to load
         logger.info("Waiting for QA app to load...")
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        time.sleep(10)  # Give it extra time to load
+        
+        # Wait for Streamlit to fully render
+        logger.info("Waiting for Streamlit to render content...")
+        try:
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
+            logger.info("Streamlit app container found")
+        except:
+            logger.warning("Could not find Streamlit app container, continuing...")
+        
+        time.sleep(15)  # Give extra time for React components to render
         
         logger.info("QA app loaded, looking for question button...")
         
