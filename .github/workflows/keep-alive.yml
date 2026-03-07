@@ -1,0 +1,48 @@
+name: Keep Streamlit Apps Alive
+
+on:
+  schedule:
+    # Run every 5 hours
+    - cron: '0 */5 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install selenium webdriver-manager
+
+    - name: Keep Tennis App Alive
+      run: |
+        echo "Interacting with Tennis Backhand Detector..."
+        python keep_alive_dual.py
+      continue-on-error: true
+
+    - name: Upload screenshots on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: debug-screenshots
+        path: '*.png'
+        if-no-files-found: ignore
+
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: execution-logs
+        path: '*.log'
+        if-no-files-found: ignore
