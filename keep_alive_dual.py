@@ -134,43 +134,31 @@ def interact_with_tennis_app(driver):
         # Wait for page to load
         logger.info("Waiting for page to load...")
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        time.sleep(3)
         
-        # Wait for Streamlit to fully render - look for the main container
-        logger.info("Waiting for Streamlit to render content...")
-        try:
-            # Wait for Streamlit's main content div
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
-            logger.info("Streamlit app container found")
-        except:
-            logger.warning("Could not find Streamlit app container, continuing...")
-        
-        time.sleep(15)  # Give extra time for React components to render
-        
-        logger.info("Page loaded, looking for interactive elements...")
-        
-        # CRITICAL: Switch to the iframe where the actual app is loaded
+        # CRITICAL: Switch to the iframe FIRST
         logger.info("Looking for Streamlit app iframe...")
         try:
-            # Wait for iframe to be present
             iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[title='streamlitApp']")))
-            logger.info("Found Streamlit iframe, switching to it...")
+            logger.info("✅ Found iframe, switching to it...")
             driver.switch_to.frame(iframe)
-            logger.info("✅ Switched to Streamlit app iframe")
-            time.sleep(5)  # Wait for content inside iframe to load
+            time.sleep(3)
         except Exception as e:
-            logger.error(f"❌ Could not switch to iframe: {e}")
+            logger.error(f"❌ Could not find/switch to iframe: {e}")
             driver.save_screenshot("tennis_no_iframe.png")
-            return True  # Still count as success since page loaded
+            return True
         
-        # Debug: Save page source from inside the iframe
+        # NOW check for Streamlit content (inside the iframe)
+        logger.info("Waiting for Streamlit to render inside iframe...")
         try:
-            page_source = driver.page_source
-            logger.info(f"Iframe page source length: {len(page_source)} characters")
-            with open("tennis_iframe_source.html", "w", encoding="utf-8") as f:
-                f.write(page_source)
-            logger.info("Iframe source saved to tennis_iframe_source.html")
-        except Exception as e:
-            logger.warning(f"Could not analyze iframe source: {e}")
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
+            logger.info("✅ Streamlit container found inside iframe")
+        except:
+            logger.warning("Could not find Streamlit container, continuing...")
+        
+        time.sleep(10)  # Extra time for React components
+        
+        logger.info("Looking for interactive elements...")
         
         # Click the correct radio buttons for demo video and Djokovic
         try:
@@ -309,31 +297,31 @@ def interact_with_qa_app(driver):
         # Wait for page to load
         logger.info("Waiting for QA app to load...")
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        time.sleep(3)
         
-        # Wait for Streamlit to fully render
-        logger.info("Waiting for Streamlit to render content...")
-        try:
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
-            logger.info("Streamlit app container found")
-        except:
-            logger.warning("Could not find Streamlit app container, continuing...")
-        
-        time.sleep(15)  # Give extra time for React components to render
-        
-        logger.info("QA app loaded, looking for question button...")
-        
-        # CRITICAL: Switch to the iframe where the actual app is loaded
+        # CRITICAL: Switch to iframe FIRST
         logger.info("Looking for Streamlit app iframe...")
         try:
             iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[title='streamlitApp']")))
-            logger.info("Found Streamlit iframe, switching to it...")
+            logger.info("✅ Found iframe, switching to it...")
             driver.switch_to.frame(iframe)
-            logger.info("✅ Switched to Streamlit app iframe")
-            time.sleep(5)
+            time.sleep(3)
         except Exception as e:
-            logger.error(f"❌ Could not switch to iframe: {e}")
+            logger.error(f"❌ Could not find/switch to iframe: {e}")
             driver.save_screenshot("qa_no_iframe.png")
             return True
+        
+        # NOW check for Streamlit content (inside iframe)
+        logger.info("Waiting for Streamlit to render inside iframe...")
+        try:
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='stApp']")))
+            logger.info("✅ Streamlit container found inside iframe")
+        except:
+            logger.warning("Could not find Streamlit container, continuing...")
+        
+        time.sleep(10)
+        
+        logger.info("Looking for question button...")
         
         # Look for sample question button
         question_clicked = False
