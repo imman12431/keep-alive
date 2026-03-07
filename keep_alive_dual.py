@@ -148,22 +148,29 @@ def interact_with_tennis_app(driver):
         
         logger.info("Page loaded, looking for interactive elements...")
         
-        # Debug: Save page source to see what's actually there
+        # CRITICAL: Switch to the iframe where the actual app is loaded
+        logger.info("Looking for Streamlit app iframe...")
+        try:
+            # Wait for iframe to be present
+            iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[title='streamlitApp']")))
+            logger.info("Found Streamlit iframe, switching to it...")
+            driver.switch_to.frame(iframe)
+            logger.info("✅ Switched to Streamlit app iframe")
+            time.sleep(5)  # Wait for content inside iframe to load
+        except Exception as e:
+            logger.error(f"❌ Could not switch to iframe: {e}")
+            driver.save_screenshot("tennis_no_iframe.png")
+            return True  # Still count as success since page loaded
+        
+        # Debug: Save page source from inside the iframe
         try:
             page_source = driver.page_source
-            logger.info(f"Page source length: {len(page_source)} characters")
-            # Check if it looks like a Streamlit app
-            if "streamlit" in page_source.lower():
-                logger.info("✅ Page contains Streamlit content")
-            else:
-                logger.warning("⚠️  Page doesn't appear to contain Streamlit content")
-            
-            # Save full page source for debugging
-            with open("tennis_page_source.html", "w", encoding="utf-8") as f:
+            logger.info(f"Iframe page source length: {len(page_source)} characters")
+            with open("tennis_iframe_source.html", "w", encoding="utf-8") as f:
                 f.write(page_source)
-            logger.info("Page source saved to tennis_page_source.html")
+            logger.info("Iframe source saved to tennis_iframe_source.html")
         except Exception as e:
-            logger.warning(f"Could not analyze page source: {e}")
+            logger.warning(f"Could not analyze iframe source: {e}")
         
         # Click the correct radio buttons for demo video and Djokovic
         try:
@@ -314,6 +321,19 @@ def interact_with_qa_app(driver):
         time.sleep(15)  # Give extra time for React components to render
         
         logger.info("QA app loaded, looking for question button...")
+        
+        # CRITICAL: Switch to the iframe where the actual app is loaded
+        logger.info("Looking for Streamlit app iframe...")
+        try:
+            iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[title='streamlitApp']")))
+            logger.info("Found Streamlit iframe, switching to it...")
+            driver.switch_to.frame(iframe)
+            logger.info("✅ Switched to Streamlit app iframe")
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"❌ Could not switch to iframe: {e}")
+            driver.save_screenshot("qa_no_iframe.png")
+            return True
         
         # Look for sample question button
         question_clicked = False
