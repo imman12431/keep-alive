@@ -17,6 +17,7 @@ on:
 jobs:
   wake-apps:
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # Allow enough time for apps to wake up (5 min each + buffer)
     
     steps:
     - name: Checkout repository
