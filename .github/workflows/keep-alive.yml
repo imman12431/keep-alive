@@ -1,48 +1,46 @@
 name: Keep Streamlit Apps Alive
 
 on:
+  # Run every 3 hours
   schedule:
-    # Run every 5 hours
-    - cron: '0 */5 * * *'
-
+    - cron: '0 */3 * * *'
+  
+  # Run whenever you push to the repo
+  push:
+    branches:
+      - main
+      - master
+  
   # Allow manual trigger
   workflow_dispatch:
 
 jobs:
-  keep-alive:
+  wake-apps:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
+    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-
+    
     - name: Install dependencies
       run: |
         pip install selenium webdriver-manager
-
-    - name: Keep Tennis App Alive
+    
+    - name: Wake up Streamlit apps
       run: |
-        echo "Interacting with Tennis Backhand Detector..."
+        echo "Waking up Streamlit apps..."
         python keep_alive_dual.py
-      continue-on-error: true
-
+      continue-on-error: false
+    
     - name: Upload screenshots on failure
       if: failure()
       uses: actions/upload-artifact@v3
       with:
         name: debug-screenshots
         path: '*.png'
-        if-no-files-found: ignore
-
-    - name: Upload logs
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: execution-logs
-        path: '*.log'
         if-no-files-found: ignore
