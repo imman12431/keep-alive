@@ -138,20 +138,35 @@ def interact_with_tennis_app(driver):
         
         logger.info("Page loaded, looking for interactive elements...")
         
-        # Just click the second radio button (Djokovic) since demo video is usually default
+        # Click the correct radio buttons for demo video and Djokovic
         try:
             radios = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "input[type='radio']")))
             logger.info(f"Found {len(radios)} radio buttons")
             
-            if len(radios) >= 2:
-                # Click the second radio (Djokovic)
-                driver.execute_script("arguments[0].scrollIntoView(true);", radios[1])
+            # Radio button order in tennis app:
+            # radios[0] = "Use demo video"
+            # radios[1] = "Upload your own"
+            # radios[2] = "Jannik Sinner"
+            # radios[3] = "Novak Djokovic"
+            
+            if len(radios) >= 4:
+                # Click "Use demo video" first (should be default but ensure it)
+                driver.execute_script("arguments[0].scrollIntoView(true);", radios[0])
                 time.sleep(1)
-                driver.execute_script("arguments[0].click();", radios[1])
-                logger.info("✅ Selected Djokovic option")
+                driver.execute_script("arguments[0].click();", radios[0])
+                logger.info("✅ Selected 'Use demo video'")
+                time.sleep(2)
+                
+                # Click "Novak Djokovic" (4th radio button)
+                driver.execute_script("arguments[0].scrollIntoView(true);", radios[3])
+                time.sleep(1)
+                driver.execute_script("arguments[0].click();", radios[3])
+                logger.info("✅ Selected 'Novak Djokovic'")
                 time.sleep(4)
+            else:
+                logger.warning(f"Expected 4 radio buttons, found {len(radios)}")
         except Exception as e:
-            logger.warning(f"Could not select Djokovic radio: {e}")
+            logger.warning(f"Could not select radios: {e}")
         
         # Find and click Run button - try multiple strategies
         logger.info("Looking for Run Backhand Detection button...")
